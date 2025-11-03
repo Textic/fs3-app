@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Data;
 
 @Entity(name = "users")
@@ -20,4 +22,8 @@ public class User {
     private String password;
     private String email;
     private String rol;
+
+    @ManyToOne
+    @JoinColumn(name = "laboratorio_id", nullable = true)
+    private Laboratorio laboratorio;
 }

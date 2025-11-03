@@ -1,6 +1,7 @@
 package com.textic.fs3_app.controller;
 
 import com.textic.fs3_app.model.User;
+import com.textic.fs3_app.repository.LaboratorioRepository;
 import com.textic.fs3_app.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import com.textic.fs3_app.model.Laboratorio;
 
 import java.util.List;
 
@@ -23,6 +25,9 @@ public class UserController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private LaboratorioRepository laboratorioRepository;
 
     @GetMapping
     public List<User> getAllUsers() {
@@ -70,5 +75,40 @@ public class UserController {
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         }
         return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        logger.info("Solicitud para eliminar usuario: {}", id);
+        User user = userRepository.findById(id).orElse(null);
+        if (user != null) {
+            userRepository.delete(user);
+            logger.info("Usuario eliminado con ID: {}", id);
+            return new ResponseEntity<>("Usuario eliminado exitosamente.", HttpStatus.OK);
+        } else {
+            logger.warn("No se encontró el usuario con ID: {} para eliminar.", id);
+            return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PutMapping("/assign/{userId}/lab/{labId}")
+    public ResponseEntity<?> assignLaboratorioToUser(@PathVariable Long userId, @PathVariable Long labId) {
+        logger.info("Solicitud para asignar laboratorio {} al usuario {}", labId, userId);
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
+        }
+
+        Laboratorio lab = laboratorioRepository.findById(labId).orElse(null);
+        if (lab == null) {
+            return new ResponseEntity<>("Laboratorio no encontrado.", HttpStatus.NOT_FOUND);
+        }
+
+        user.setLaboratorio(lab);
+        User updatedUser = userRepository.save(user);
+
+        logger.info("Laboratorio {} asignado exitosamente al usuario {}", labId, userId);
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
 }
