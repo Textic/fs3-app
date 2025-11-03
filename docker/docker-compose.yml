@@ -1,0 +1,35 @@
+services:
+  oracle-db:
+    image: gvenzl/oracle-free:latest
+    container_name: mi-oracle-db
+    ports:
+      - "1521:1521"
+    environment:
+      # Default env variables
+      - ORACLE_PASSWORD=Admin12345
+      - APP_USER=test
+      - APP_USER_PASSWORD=testpass12345
+    volumes:
+      - ./oracle-data:/opt/oracle/oradata
+      - ./01_create_common_user.sql:/container-entrypoint-initdb.d/01_create_common_user.sql
+
+# SySTEM Credentials:
+# Host: localhost
+# Puerto: 1521
+# SID: FREE
+# User: SYSTEM
+# Password: Admin12345
+
+# App User Credentials:
+# Host: localhost
+# Puerto: 1521
+# Service Name: FREEPDB1
+# User: test
+# Password: testpass12345
+
+# Common User Credentials (created via sql script):
+# Host: localhost
+# Puerto: 1521
+# SID: FREE
+# User: dev
+# Password: devpass12345
