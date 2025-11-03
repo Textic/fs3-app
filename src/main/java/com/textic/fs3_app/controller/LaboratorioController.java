@@ -1,5 +1,6 @@
 package com.textic.fs3_app.controller;
 
+import com.textic.fs3_app.dto.LaboratorioDTO;
 import com.textic.fs3_app.model.Laboratorio;
 import com.textic.fs3_app.repository.LaboratorioRepository;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/laboratorios")
@@ -20,31 +22,46 @@ public class LaboratorioController {
     @Autowired
     private LaboratorioRepository laboratorioRepository;
 
+    private LaboratorioDTO convertToDTO(Laboratorio laboratorio) {
+        return new LaboratorioDTO(laboratorio.getId(), laboratorio.getNombre(), laboratorio.getDireccion(), laboratorio.getTelefono());
+    }
+
+    private Laboratorio convertToEntity(LaboratorioDTO dto) {
+        Laboratorio laboratorio = new Laboratorio();
+        laboratorio.setId(dto.getId());
+        laboratorio.setNombre(dto.getNombre());
+        laboratorio.setDireccion(dto.getDireccion());
+        laboratorio.setTelefono(dto.getTelefono());
+        return laboratorio;
+    }
+
     @GetMapping
-    public List<Laboratorio> getAllLaboratorios() {
+    public List<LaboratorioDTO> getAllLaboratorios() {
         logger.info("Solicitud para obtener todos los laboratorios");
-        return laboratorioRepository.findAll();
+        return laboratorioRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @PostMapping
-    public Laboratorio createLaboratorio(@RequestBody Laboratorio laboratorio) {
-        logger.info("Solicitud para crear laboratorio: {}", laboratorio.getNombre());
-        return laboratorioRepository.save(laboratorio);
+    public LaboratorioDTO createLaboratorio(@RequestBody LaboratorioDTO laboratorioDTO) {
+        logger.info("Solicitud para crear laboratorio: {}", laboratorioDTO.getNombre());
+        Laboratorio laboratorio = convertToEntity(laboratorioDTO);
+        Laboratorio savedLaboratorio = laboratorioRepository.save(laboratorio);
+        return convertToDTO(savedLaboratorio);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Laboratorio> getLaboratorioById(@PathVariable(value = "id") Long laboratorioId) {
+    public ResponseEntity<LaboratorioDTO> getLaboratorioById(@PathVariable(value = "id") Long laboratorioId) {
         logger.info("Solicitud para obtener laboratorio por ID: {}", laboratorioId);
         Optional<Laboratorio> laboratorio = laboratorioRepository.findById(laboratorioId);
         if (laboratorio.isPresent()) {
-            return ResponseEntity.ok().body(laboratorio.get());
+            return ResponseEntity.ok().body(convertToDTO(laboratorio.get()));
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Laboratorio> updateLaboratorio(@PathVariable(value = "id") Long laboratorioId, @RequestBody Laboratorio laboratorioDetails) {
+    public ResponseEntity<LaboratorioDTO> updateLaboratorio(@PathVariable(value = "id") Long laboratorioId, @RequestBody LaboratorioDTO laboratorioDetails) {
         logger.info("Solicitud para actualizar laboratorio: {}", laboratorioId);
         Optional<Laboratorio> laboratorio = laboratorioRepository.findById(laboratorioId);
         if (laboratorio.isPresent()) {
@@ -53,7 +70,7 @@ public class LaboratorioController {
             labToUpdate.setDireccion(laboratorioDetails.getDireccion());
             labToUpdate.setTelefono(laboratorioDetails.getTelefono());
             final Laboratorio updatedLaboratorio = laboratorioRepository.save(labToUpdate);
-            return ResponseEntity.ok(updatedLaboratorio);
+            return ResponseEntity.ok(convertToDTO(updatedLaboratorio));
         } else {
             return ResponseEntity.notFound().build();
         }

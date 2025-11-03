@@ -1,5 +1,6 @@
 package com.textic.fs3_app.controller;
 
+import com.textic.fs3_app.dto.UserDTO;
 import com.textic.fs3_app.model.User;
 import com.textic.fs3_app.repository.LaboratorioRepository;
 import com.textic.fs3_app.repository.UserRepository;
@@ -10,9 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import com.textic.fs3_app.model.Laboratorio;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -29,16 +30,22 @@ public class UserController {
     @Autowired
     private LaboratorioRepository laboratorioRepository;
 
+    private UserDTO convertToDTO(User user) {
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getRol(), user.getLaboratorio() != null ? user.getLaboratorio().getId() : null);
+    }
+
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         logger.info("Solicitud para obtener todos los usuarios");
-        return userRepository.findAll();
+        return userRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         logger.info("Solicitud para obtener usuario por ID: {}", id);
-        return userRepository.findById(id).orElse(null);
+        return userRepository.findById(id)
+                .map(user -> ResponseEntity.ok(convertToDTO(user)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -50,7 +57,7 @@ public class UserController {
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
-        return new ResponseEntity<>(savedUser, HttpStatus.CREATED);
+        return new ResponseEntity<>(convertToDTO(savedUser), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -61,8 +68,7 @@ public class UserController {
             return new ResponseEntity<>("Rol invalido. Los roles permitidos son 'admin' y 'user'.", HttpStatus.BAD_REQUEST);
         }
 
-        User user = userRepository.findById(id).orElse(null);
-        if (user != null) {
+        return userRepository.findById(id).<ResponseEntity<?>>map(user -> {
             user.setUsername(userDetails.getUsername());
             user.setEmail(userDetails.getEmail());
             if (role != null) {
@@ -72,43 +78,31 @@ public class UserController {
                 user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             }
             User updatedUser = userRepository.save(user);
-            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
-        }
-        return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+        }).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         logger.info("Solicitud para eliminar usuario: {}", id);
-        User user = userRepository.findById(id).orElse(null);
-        if (user != null) {
+        return userRepository.findById(id).<ResponseEntity<?>>map(user -> {
             userRepository.delete(user);
             logger.info("Usuario eliminado con ID: {}", id);
             return new ResponseEntity<>("Usuario eliminado exitosamente.", HttpStatus.OK);
-        } else {
-            logger.warn("No se encontró el usuario con ID: {} para eliminar.", id);
-            return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
-        }
+        }).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
     }
 
     @PutMapping("/assign/{userId}/lab/{labId}")
     public ResponseEntity<?> assignLaboratorioToUser(@PathVariable Long userId, @PathVariable Long labId) {
         logger.info("Solicitud para asignar laboratorio {} al usuario {}", labId, userId);
 
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null) {
-            return new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND);
-        }
-
-        Laboratorio lab = laboratorioRepository.findById(labId).orElse(null);
-        if (lab == null) {
-            return new ResponseEntity<>("Laboratorio no encontrado.", HttpStatus.NOT_FOUND);
-        }
-
-        user.setLaboratorio(lab);
-        User updatedUser = userRepository.save(user);
-
-        logger.info("Laboratorio {} asignado exitosamente al usuario {}", labId, userId);
-        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        return userRepository.findById(userId).<ResponseEntity<?>>map(user -> 
+            laboratorioRepository.findById(labId).<ResponseEntity<?>>map(lab -> {
+                user.setLaboratorio(lab);
+                User updatedUser = userRepository.save(user);
+                logger.info("Laboratorio {} asignado exitosamente al usuario {}", labId, userId);
+                return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+            }).orElse(new ResponseEntity<>("Laboratorio no encontrado.", HttpStatus.NOT_FOUND))
+        ).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
     }
 }
