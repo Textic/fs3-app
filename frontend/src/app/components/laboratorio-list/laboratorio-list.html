@@ -1,0 +1,27 @@
+<div class="container">
+	<div class="header">
+		<h2>Laboratorios</h2>
+		<a routerLink="/laboratorios/new" class="btn-add" *ngIf="!isUser">Nuevo Laboratorio</a>
+	</div>
+
+	<div *ngIf="loading" class="loading">Cargando...</div>
+	<div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+	<div class="grid" *ngIf="!loading && !error">
+		<div *ngFor="let lab of laboratorios" class="card">
+			<div class="card-body">
+				<h3>{{ lab.nombre }}</h3>
+				<p><strong>Dirección:</strong> {{ lab.direccion }}</p>
+				<p><strong>Teléfono:</strong> {{ lab.telefono }}</p>
+			</div>
+			<div class="card-actions" *ngIf="!isUser">
+				<a [routerLink]="['/laboratorios/edit', lab.id]" class="btn-edit">Editar</a>
+				<button (click)="deleteLaboratorio(lab.id)" class="btn-delete">Eliminar</button>
+			</div>
+		</div>
+	</div>
+
+	<div *ngIf="!loading && laboratorios.length === 0" class="no-data">
+		No hay laboratorios registrados.
+	</div>
+</div>

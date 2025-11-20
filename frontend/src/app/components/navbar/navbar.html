@@ -1,0 +1,16 @@
+<nav class="navbar">
+  <div class="container">
+    <a routerLink="/" class="logo">FS3 App</a>
+    <div class="nav-links">
+      <ng-container *ngIf="currentUser$ | async as user; else guestLinks">
+        <span class="welcome">Hola, {{ user.username }}</span>
+        <a routerLink="/laboratorios" routerLinkActive="active">Laboratorios</a>
+        <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
+      </ng-container>
+      <ng-template #guestLinks>
+        <a routerLink="/login" routerLinkActive="active">Iniciar Sesión</a>
+        <a routerLink="/register" routerLinkActive="active">Registrarse</a>
+      </ng-template>
+    </div>
+  </div>
+</nav>

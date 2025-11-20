@@ -1,0 +1,36 @@
+<div class="container">
+	<div class="card">
+		<h2>{{ isEditMode ? 'Editar Laboratorio' : 'Nuevo Laboratorio' }}</h2>
+
+		<form (ngSubmit)="onSubmit()" #labForm="ngForm">
+			<div class="form-group">
+				<label for="nombre">Nombre</label>
+				<input type="text" id="nombre" name="nombre" [(ngModel)]="laboratorio.nombre" required
+					class="form-control">
+			</div>
+
+			<div class="form-group">
+				<label for="direccion">Dirección</label>
+				<input type="text" id="direccion" name="direccion" [(ngModel)]="laboratorio.direccion" required
+					class="form-control">
+			</div>
+
+			<div class="form-group">
+				<label for="telefono">Teléfono</label>
+				<input type="text" id="telefono" name="telefono" [(ngModel)]="laboratorio.telefono" required
+					class="form-control">
+			</div>
+
+			<div *ngIf="error" class="alert alert-danger">
+				{{ error }}
+			</div>
+
+			<div class="actions">
+				<button type="submit" [disabled]="!labForm.form.valid || loading" class="btn-primary">
+					{{ loading ? 'Guardando...' : 'Guardar' }}
+				</button>
+				<a routerLink="/laboratorios" class="btn-secondary">Cancelar</a>
+			</div>
+		</form>
+	</div>
+</div>

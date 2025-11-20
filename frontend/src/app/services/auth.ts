@@ -1,0 +1,62 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { User } from '../models';
+import { Router } from '@angular/router';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private apiUrl = 'http://localhost:8080/api/users';
+  private currentUserSubject: BehaviorSubject<User | null>;
+  public currentUser: Observable<User | null>;
+
+  constructor(private http: HttpClient, private router: Router) {
+    const storedUser = localStorage.getItem('currentUser');
+    this.currentUserSubject = new BehaviorSubject<User | null>(storedUser ? JSON.parse(storedUser) : null);
+    this.currentUser = this.currentUserSubject.asObservable();
+  }
+
+  public get currentUserValue(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  login(username: string, password: string): Observable<any> {
+    const headers = new HttpHeaders({
+      authorization: 'Basic ' + btoa(username + ':' + password)
+    });
+
+    return this.http.get<User>('http://localhost:8080/api/users/me', { headers }).pipe(
+      tap((user) => {
+        user.password = password; // Store password for Basic Auth
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
+  register(user: User): Observable<any> {
+    return this.http.post(`${this.apiUrl}/register`, user);
+  }
+
+  recover(user: User): Observable<any> {
+    return this.http.post(`${this.apiUrl}/recover`, user);
+  }
+
+  logout() {
+    localStorage.removeItem('currentUser');
+    this.currentUserSubject.next(null);
+    this.router.navigate(['/login']);
+  }
+
+  getAuthHeaders(): HttpHeaders {
+    const user = this.currentUserValue;
+    if (user && user.username && user.password) {
+      return new HttpHeaders({
+        authorization: 'Basic ' + btoa(user.username + ':' + user.password)
+      });
+    }
+    return new HttpHeaders();
+  }
+}
