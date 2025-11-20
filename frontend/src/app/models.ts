@@ -13,3 +13,10 @@ export interface Laboratorio {
 	direccion: string;
 	telefono: string;
 }
+export interface Resultado {
+	id?: number;
+	paciente?: User;
+	laboratorio?: Laboratorio;
+	analisis: string;
+	fecha: Date;
+}

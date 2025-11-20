@@ -11,6 +11,7 @@ import lombok.Data;
 
 @Entity(name = "users")
 @Data
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id

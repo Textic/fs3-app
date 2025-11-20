@@ -44,6 +44,24 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/recover`, user);
   }
 
+  updateProfile(user: User): Observable<any> {
+    return this.http.put(`${this.apiUrl}/profile`, user, { headers: this.getAuthHeaders() }).pipe(
+      tap((updatedUser: any) => {
+        if (user.password) {
+          updatedUser.password = user.password;
+        } else {
+          updatedUser.password = this.currentUserValue?.password;
+        }
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        this.currentUserSubject.next(updatedUser);
+      })
+    );
+  }
+
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<User[]>(this.apiUrl, { headers: this.getAuthHeaders() });
+  }
+
   logout() {
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);

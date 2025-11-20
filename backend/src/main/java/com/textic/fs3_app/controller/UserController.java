@@ -142,4 +142,18 @@ public class UserController {
             }
         }).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
     }
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody User userDetails, java.security.Principal principal) {
+        logger.info("Solicitud para actualizar perfil del usuario: {}", principal.getName());
+        return userRepository.findByUsername(principal.getName()).<ResponseEntity<?>>map(user -> {
+            if (userDetails.getEmail() != null && !userDetails.getEmail().isEmpty()) {
+                user.setEmail(userDetails.getEmail());
+            }
+            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+            }
+            User updatedUser = userRepository.save(user);
+            return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+        }).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+    }
 }

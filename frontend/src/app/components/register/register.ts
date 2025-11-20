@@ -21,11 +21,22 @@ export class RegisterComponent {
   error = '';
   loading = false;
 
+  passwordError = '';
+
   constructor(private authService: AuthService, private router: Router) { }
 
   onSubmit() {
     this.loading = true;
     this.error = '';
+    this.passwordError = '';
+
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/;
+    if (!passwordRegex.test(this.user.password || '')) {
+      this.passwordError = 'La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial (!@#$%^&*)';
+      this.loading = false;
+      return;
+    }
+
     this.authService.register(this.user).subscribe({
       next: () => {
         this.router.navigate(['/login']);

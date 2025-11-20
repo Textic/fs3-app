@@ -1,36 +1,43 @@
-<div class="container">
-	<div class="card">
-		<h2>{{ isEditMode ? 'Editar Laboratorio' : 'Nuevo Laboratorio' }}</h2>
+<div class="container mt-5">
+	<div class="row justify-content-center">
+		<div class="col-md-8 col-lg-8">
+			<div class="card shadow">
+				<div class="card-header bg-primary text-white">
+					<h3 class="mb-0">{{ isEditMode ? 'Editar Laboratorio' : 'Nuevo Laboratorio' }}</h3>
+				</div>
+				<div class="card-body">
+					<form (ngSubmit)="onSubmit()" #labForm="ngForm">
+						<div class="mb-3">
+							<label for="nombre" class="form-label">Nombre</label>
+							<input type="text" id="nombre" name="nombre" [(ngModel)]="laboratorio.nombre" required
+								class="form-control">
+						</div>
 
-		<form (ngSubmit)="onSubmit()" #labForm="ngForm">
-			<div class="form-group">
-				<label for="nombre">Nombre</label>
-				<input type="text" id="nombre" name="nombre" [(ngModel)]="laboratorio.nombre" required
-					class="form-control">
-			</div>
+						<div class="mb-3">
+							<label for="direccion" class="form-label">Dirección</label>
+							<input type="text" id="direccion" name="direccion" [(ngModel)]="laboratorio.direccion"
+								required class="form-control">
+						</div>
 
-			<div class="form-group">
-				<label for="direccion">Dirección</label>
-				<input type="text" id="direccion" name="direccion" [(ngModel)]="laboratorio.direccion" required
-					class="form-control">
-			</div>
+						<div class="mb-3">
+							<label for="telefono" class="form-label">Teléfono</label>
+							<input type="text" id="telefono" name="telefono" [(ngModel)]="laboratorio.telefono" required
+								class="form-control">
+						</div>
 
-			<div class="form-group">
-				<label for="telefono">Teléfono</label>
-				<input type="text" id="telefono" name="telefono" [(ngModel)]="laboratorio.telefono" required
-					class="form-control">
-			</div>
+						<div *ngIf="error" class="alert alert-danger">
+							{{ error }}
+						</div>
 
-			<div *ngIf="error" class="alert alert-danger">
-				{{ error }}
+						<div class="d-flex justify-content-end gap-2">
+							<a routerLink="/laboratorios" class="btn btn-secondary">Cancelar</a>
+							<button type="submit" [disabled]="!labForm.form.valid || loading" class="btn btn-primary">
+								{{ loading ? 'Guardando...' : 'Guardar' }}
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
-
-			<div class="actions">
-				<button type="submit" [disabled]="!labForm.form.valid || loading" class="btn-primary">
-					{{ loading ? 'Guardando...' : 'Guardar' }}
-				</button>
-				<a routerLink="/laboratorios" class="btn-secondary">Cancelar</a>
-			</div>
-		</form>
+		</div>
 	</div>
 </div>

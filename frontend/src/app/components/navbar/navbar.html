@@ -1,16 +1,38 @@
-<nav class="navbar">
-  <div class="container">
-    <a routerLink="/" class="logo">FS3 App</a>
-    <div class="nav-links">
-      <ng-container *ngIf="currentUser$ | async as user; else guestLinks">
-        <span class="welcome">Hola, {{ user.username }}</span>
-        <a routerLink="/laboratorios" routerLinkActive="active">Laboratorios</a>
-        <button (click)="logout()" class="btn-logout">Cerrar Sesión</button>
-      </ng-container>
-      <ng-template #guestLinks>
-        <a routerLink="/login" routerLinkActive="active">Iniciar Sesión</a>
-        <a routerLink="/register" routerLinkActive="active">Registrarse</a>
-      </ng-template>
-    </div>
-  </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+	<div class="container">
+		<a class="navbar-brand" routerLink="/">FS3 App</a>
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+			aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse" id="navbarNav">
+			<ul class="navbar-nav ms-auto">
+				<ng-container *ngIf="currentUser$ | async as user; else guestLinks">
+					<li class="nav-item d-flex align-items-center">
+						<span class="nav-link text-light me-2">Hola, {{ user.username }}</span>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" routerLink="/profile" routerLinkActive="active">Mi Perfil</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" routerLink="/laboratorios" routerLinkActive="active">Laboratorios</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" routerLink="/resultados" routerLinkActive="active">Resultados</a>
+					</li>
+					<li class="nav-item">
+						<button (click)="logout()" class="btn btn-outline-light ms-2">Cerrar Sesión</button>
+					</li>
+				</ng-container>
+				<ng-template #guestLinks>
+					<li class="nav-item">
+						<a class="nav-link" routerLink="/login" routerLinkActive="active">Iniciar Sesión</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" routerLink="/register" routerLinkActive="active">Registrarse</a>
+					</li>
+				</ng-template>
+			</ul>
+		</div>
+	</div>
 </nav>

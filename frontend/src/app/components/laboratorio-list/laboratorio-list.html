@@ -1,27 +1,40 @@
-<div class="container">
-	<div class="header">
+<div class="container mt-4">
+	<div class="d-flex justify-content-between align-items-center mb-4">
 		<h2>Laboratorios</h2>
-		<a routerLink="/laboratorios/new" class="btn-add" *ngIf="!isUser">Nuevo Laboratorio</a>
+		<a routerLink="/laboratorios/new" class="btn btn-success" *ngIf="!isUser">
+			<i class="bi bi-plus-lg"></i> Nuevo Laboratorio
+		</a>
 	</div>
 
-	<div *ngIf="loading" class="loading">Cargando...</div>
+	<div *ngIf="loading" class="text-center my-5">
+		<div class="spinner-border text-primary" role="status">
+			<span class="visually-hidden">Cargando...</span>
+		</div>
+	</div>
+
 	<div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
-	<div class="grid" *ngIf="!loading && !error">
-		<div *ngFor="let lab of laboratorios" class="card">
-			<div class="card-body">
-				<h3>{{ lab.nombre }}</h3>
-				<p><strong>Dirección:</strong> {{ lab.direccion }}</p>
-				<p><strong>Teléfono:</strong> {{ lab.telefono }}</p>
-			</div>
-			<div class="card-actions" *ngIf="!isUser">
-				<a [routerLink]="['/laboratorios/edit', lab.id]" class="btn-edit">Editar</a>
-				<button (click)="deleteLaboratorio(lab.id)" class="btn-delete">Eliminar</button>
+	<div class="row" *ngIf="!loading && !error">
+		<div *ngFor="let lab of laboratorios" class="col-md-6 col-lg-4 mb-4">
+			<div class="card h-100 shadow-sm">
+				<div class="card-body">
+					<h5 class="card-title">{{ lab.nombre }}</h5>
+					<p class="card-text"><strong>Dirección:</strong> {{ lab.direccion }}</p>
+					<p class="card-text"><strong>Teléfono:</strong> {{ lab.telefono }}</p>
+				</div>
+				<div class="card-footer bg-transparent border-top-0" *ngIf="!isUser">
+					<div class="d-flex justify-content-end gap-2">
+						<a [routerLink]="['/laboratorios/edit', lab.id]"
+							class="btn btn-outline-primary btn-sm">Editar</a>
+						<button (click)="deleteLaboratorio(lab.id)"
+							class="btn btn-outline-danger btn-sm">Eliminar</button>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<div *ngIf="!loading && laboratorios.length === 0" class="no-data">
+	<div *ngIf="!loading && laboratorios.length === 0" class="alert alert-info text-center">
 		No hay laboratorios registrados.
 	</div>
 </div>

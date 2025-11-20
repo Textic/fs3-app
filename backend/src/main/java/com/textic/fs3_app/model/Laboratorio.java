@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
  @Entity
+ @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Laboratorio {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
