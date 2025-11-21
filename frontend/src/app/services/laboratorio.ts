@@ -7,7 +7,7 @@ import { Laboratorio } from '../models';
   providedIn: 'root'
 })
 export class LaboratorioService {
-  private apiUrl = 'http://localhost:8080/api/laboratorios';
+  private apiUrl = '/api/laboratorios';
 
   constructor(private http: HttpClient) { }
 

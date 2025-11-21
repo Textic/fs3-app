@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/users';
+  private apiUrl = '/api/users';
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser: Observable<User | null>;
 
@@ -27,7 +27,7 @@ export class AuthService {
       authorization: 'Basic ' + btoa(username + ':' + password)
     });
 
-    return this.http.get<User>('http://localhost:8080/api/users/me', { headers }).pipe(
+    return this.http.get<User>('/api/users/me', { headers }).pipe(
       tap((user) => {
         user.password = password; // Store password for Basic Auth
         localStorage.setItem('currentUser', JSON.stringify(user));

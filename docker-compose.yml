@@ -5,13 +5,34 @@ services:
     ports:
       - "1521:1521"
     environment:
-      # Default env variables
       - ORACLE_PASSWORD=Admin12345
       - APP_USER=test
       - APP_USER_PASSWORD=testpass12345
     volumes:
       - ./oracle-data:/opt/oracle/oradata
       - ./01_create_common_user.sql:/container-entrypoint-initdb.d/01_create_common_user.sql
+
+  backend:
+    build: ./backend
+    container_name: fs3-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/FREE
+      - SPRING_DATASOURCE_USERNAME=dev
+      - SPRING_DATASOURCE_PASSWORD=devpass12345
+    depends_on:
+      - oracle-db
+    restart: on-failure
+
+  frontend:
+    build: ./frontend
+    container_name: fs3-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    restart: on-failure
 
 # SySTEM Credentials:
 # Host: localhost

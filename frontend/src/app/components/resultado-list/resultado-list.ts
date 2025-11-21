@@ -1,5 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { finalize } from 'rxjs/operators';
+import { Component, OnInit } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+
 import { ResultadoService } from '../../services/resultado';
 import { Resultado } from '../../models';
 import { CommonModule } from '@angular/common';
@@ -13,34 +15,27 @@ import { RouterModule } from '@angular/router';
 	styleUrl: './resultado-list.css'
 })
 export class ResultadoListComponent implements OnInit {
-	resultados: Resultado[] = [];
+	resultados$!: Observable<Resultado[]>;
 	loading = false;
 	error = '';
 
-	constructor(private resultadoService: ResultadoService, private cdr: ChangeDetectorRef) { }
+	constructor(private resultadoService: ResultadoService) { }
 
 	ngOnInit(): void {
 		this.loadResultados();
 	}
 
 	loadResultados() {
-		console.log('Iniciando carga de resultados...');
 		this.loading = true;
-		this.resultadoService.getAll()
-			.pipe(finalize(() => {
+		this.resultados$ = this.resultadoService.getAll().pipe(
+			tap(() => this.loading = false),
+			catchError(err => {
+				console.error('Error loading results', err);
+				this.error = 'Error al cargar resultados';
 				this.loading = false;
-				this.cdr.detectChanges();
-			}))
-			.subscribe({
-				next: (data: Resultado[]) => {
-					console.log('Resultados cargados exitosamente:', data);
-					this.resultados = data;
-				},
-				error: (err) => {
-					console.error('Error al cargar resultados:', err);
-					this.error = 'Error al cargar resultados. Por favor intente nuevamente.';
-				}
-			});
+				return of([]);
+			})
+		);
 	}
 
 	deleteResultado(id: number | undefined) {
