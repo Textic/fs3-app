@@ -1,20 +1,29 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { LaboratorioForm } from './laboratorio-form';
+import { LaboratorioFormComponent } from './laboratorio-form';
 
-describe('LaboratorioForm', () => {
-  let component: LaboratorioForm;
-  let fixture: ComponentFixture<LaboratorioForm>;
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+
+describe('LaboratorioFormComponent', () => {
+  let component: LaboratorioFormComponent;
+  let fixture: ComponentFixture<LaboratorioFormComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LaboratorioForm]
+      imports: [LaboratorioFormComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([])
+      ]
     })
-    .compileComponents();
+      .compileComponents();
 
-    fixture = TestBed.createComponent(LaboratorioForm);
+    fixture = TestBed.createComponent(LaboratorioFormComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it('should create', () => {
