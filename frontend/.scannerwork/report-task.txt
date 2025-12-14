@@ -1,0 +1,6 @@
+projectKey=fs3-app-frontend
+serverUrl=http://localhost:9000
+serverVersion=25.12.0.117093
+dashboardUrl=http://localhost:9000/dashboard?id=fs3-app-frontend
+ceTaskId=98928be3-af6d-4cba-a28e-ea31d50bb422
+ceTaskUrl=http://localhost:9000/api/ce/task?id=98928be3-af6d-4cba-a28e-ea31d50bb422
