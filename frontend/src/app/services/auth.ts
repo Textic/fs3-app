@@ -62,6 +62,14 @@ export class AuthService {
     return this.http.get<User[]>(this.apiUrl, { headers: this.getAuthHeaders() });
   }
 
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
+  }
+
+  assignLab(userId: number, labId: number): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/assign/${userId}/lab/${labId}`, {}, { headers: this.getAuthHeaders() });
+  }
+
   logout() {
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);

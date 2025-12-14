@@ -35,5 +35,10 @@ export const routes: Routes = [
 		loadComponent: () => import('./components/resultado-form/resultado-form').then(m => m.ResultadoFormComponent),
 		canActivate: [authGuard, adminGuard]
 	},
+	{
+		path: 'users',
+		loadComponent: () => import('./components/user-list/user-list.component').then(m => m.UserListComponent),
+		canActivate: [authGuard, adminGuard]
+	},
 	{ path: '**', redirectTo: '/login' }
 ];

@@ -30,8 +30,15 @@ public class UserController {
     @Autowired
     private LaboratorioRepository laboratorioRepository;
 
+    private boolean isValidPassword(String password) {
+        // Min 8 chars, at least 1 uppercase, 1 number, 1 special char
+        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$";
+        return password != null && password.matches(regex);
+    }
+
     private UserDTO convertToDTO(User user) {
-        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getRol(), user.getLaboratorio() != null ? user.getLaboratorio().getId() : null);
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getRol(),
+                user.getLaboratorio() != null ? user.getLaboratorio().getId() : null);
     }
 
     @GetMapping
@@ -61,7 +68,13 @@ public class UserController {
         logger.info("Solicitud para crear usuario: {}", user.getUsername());
         String role = user.getRol();
         if (!"admin".equalsIgnoreCase(role) && !"user".equalsIgnoreCase(role)) {
-            return new ResponseEntity<>("Rol invalido. Los roles permitidos son 'admin' y 'user'.", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Rol invalido. Los roles permitidos son 'admin' y 'user'.",
+                    HttpStatus.BAD_REQUEST);
+        }
+        if (user.getPassword() == null || !isValidPassword(user.getPassword())) {
+            return new ResponseEntity<>(
+                    "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+                    HttpStatus.BAD_REQUEST);
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
@@ -73,7 +86,8 @@ public class UserController {
         logger.info("Solicitud para actualizar usuario: {}", id);
         String role = userDetails.getRol();
         if (role != null && !"admin".equalsIgnoreCase(role) && !"user".equalsIgnoreCase(role)) {
-            return new ResponseEntity<>("Rol invalido. Los roles permitidos son 'admin' y 'user'.", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Rol invalido. Los roles permitidos son 'admin' y 'user'.",
+                    HttpStatus.BAD_REQUEST);
         }
 
         return userRepository.findById(id).<ResponseEntity<?>>map(user -> {
@@ -83,6 +97,11 @@ public class UserController {
                 user.setRol(userDetails.getRol());
             }
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                if (!isValidPassword(userDetails.getPassword())) {
+                    return new ResponseEntity<>(
+                            "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+                            HttpStatus.BAD_REQUEST);
+                }
                 user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             }
             User updatedUser = userRepository.save(user);
@@ -104,15 +123,16 @@ public class UserController {
     public ResponseEntity<?> assignLaboratorioToUser(@PathVariable Long userId, @PathVariable Long labId) {
         logger.info("Solicitud para asignar laboratorio {} al usuario {}", labId, userId);
 
-        return userRepository.findById(userId).<ResponseEntity<?>>map(user -> 
-            laboratorioRepository.findById(labId).<ResponseEntity<?>>map(lab -> {
-                user.setLaboratorio(lab);
-                User updatedUser = userRepository.save(user);
-                logger.info("Laboratorio {} asignado exitosamente al usuario {}", labId, userId);
-                return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
-            }).orElse(new ResponseEntity<>("Laboratorio no encontrado.", HttpStatus.NOT_FOUND))
-        ).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+        return userRepository.findById(userId)
+                .<ResponseEntity<?>>map(user -> laboratorioRepository.findById(labId).<ResponseEntity<?>>map(lab -> {
+                    user.setLaboratorio(lab);
+                    User updatedUser = userRepository.save(user);
+                    logger.info("Laboratorio {} asignado exitosamente al usuario {}", labId, userId);
+                    return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+                }).orElse(new ResponseEntity<>("Laboratorio no encontrado.", HttpStatus.NOT_FOUND)))
+                .orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
     }
+
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         logger.info("Solicitud para registrar usuario: {}", user.getUsername());
@@ -120,6 +140,11 @@ public class UserController {
             return new ResponseEntity<>("El nombre de usuario ya existe.", HttpStatus.BAD_REQUEST);
         }
         user.setRol("user"); // Default role for registration
+        if (user.getPassword() == null || !isValidPassword(user.getPassword())) {
+            return new ResponseEntity<>(
+                    "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+                    HttpStatus.BAD_REQUEST);
+        }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
         return new ResponseEntity<>(convertToDTO(savedUser), HttpStatus.CREATED);
@@ -128,20 +153,29 @@ public class UserController {
     @PostMapping("/recover")
     public ResponseEntity<?> recoverPassword(@RequestBody User userDetails) {
         logger.info("Solicitud de recuperación de contraseña para: {}", userDetails.getEmail());
-        // In a real app, we would send an email. Here we just reset it if the email matches.
-        // For simplicity in this task, we will assume the user provides username and new password.
-        // Let's change to find by username for this simple implementation if email is not unique or reliable.
-        
+        // In a real app, we would send an email. Here we just reset it if the email
+        // matches.
+        // For simplicity in this task, we will assume the user provides username and
+        // new password.
+        // Let's change to find by username for this simple implementation if email is
+        // not unique or reliable.
+
         return userRepository.findByUsername(userDetails.getUsername()).<ResponseEntity<?>>map(user -> {
-             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                if (!isValidPassword(userDetails.getPassword())) {
+                    return new ResponseEntity<>(
+                            "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+                            HttpStatus.BAD_REQUEST);
+                }
                 user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
                 userRepository.save(user);
                 return new ResponseEntity<>("Contraseña actualizada exitosamente.", HttpStatus.OK);
             } else {
-                 return new ResponseEntity<>("La nueva contraseña es requerida.", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("La nueva contraseña es requerida.", HttpStatus.BAD_REQUEST);
             }
         }).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
     }
+
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody User userDetails, java.security.Principal principal) {
         logger.info("Solicitud para actualizar perfil del usuario: {}", principal.getName());
@@ -150,6 +184,11 @@ public class UserController {
                 user.setEmail(userDetails.getEmail());
             }
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                if (!isValidPassword(userDetails.getPassword())) {
+                    return new ResponseEntity<>(
+                            "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+                            HttpStatus.BAD_REQUEST);
+                }
                 user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             }
             User updatedUser = userRepository.save(user);
