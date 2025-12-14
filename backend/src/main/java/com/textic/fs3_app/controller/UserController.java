@@ -31,7 +31,6 @@ public class UserController {
     private LaboratorioRepository laboratorioRepository;
 
     private boolean isValidPassword(String password) {
-        // Min 8 chars, at least 1 uppercase, 1 number, 1 special char
         String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$";
         return password != null && password.matches(regex);
     }
@@ -153,12 +152,6 @@ public class UserController {
     @PostMapping("/recover")
     public ResponseEntity<?> recoverPassword(@RequestBody User userDetails) {
         logger.info("Solicitud de recuperación de contraseña para: {}", userDetails.getEmail());
-        // In a real app, we would send an email. Here we just reset it if the email
-        // matches.
-        // For simplicity in this task, we will assume the user provides username and
-        // new password.
-        // Let's change to find by username for this simple implementation if email is
-        // not unique or reliable.
 
         return userRepository.findByUsername(userDetails.getUsername()).<ResponseEntity<?>>map(user -> {
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
