@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
@@ -19,7 +19,8 @@ export class UserListComponent implements OnInit {
 
 	constructor(
 		private authService: AuthService,
-		private laboratorioService: LaboratorioService
+		private laboratorioService: LaboratorioService,
+		private cdr: ChangeDetectorRef
 	) { }
 
 	ngOnInit(): void {
@@ -29,8 +30,15 @@ export class UserListComponent implements OnInit {
 
 	loadUsers(): void {
 		this.authService.getAllUsers().subscribe({
-			next: (data) => this.users = data,
-			error: (err) => this.errorMessage = 'Error al cargar usuarios'
+			next: (data) => {
+				console.log('Users loaded:', data);
+				this.users = data;
+				this.cdr.detectChanges();
+			},
+			error: (err) => {
+				console.error('Error loading users:', err);
+				this.errorMessage = 'Error al cargar usuarios: ' + (err.error?.message || err.statusText || err.message);
+			}
 		});
 	}
 
@@ -57,7 +65,7 @@ export class UserListComponent implements OnInit {
 		this.authService.assignLab(user.id, labId).subscribe({
 			next: (updatedUser) => {
 				// Update local user or just show success
-				user.laboratorio = labId; // Optimistic update or reload if needed
+				user.laboratorioId = labId; // Optimistic update or reload if needed
 				alert('Laboratorio asignado correctamente');
 			},
 			error: (err) => this.errorMessage = 'Error al asignar laboratorio'

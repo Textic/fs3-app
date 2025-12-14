@@ -4,7 +4,8 @@ export interface User {
 	password?: string;
 	email?: string;
 	rol?: string;
-	laboratorio?: any; // Can be ID or Laboratorio object
+	laboratorioId?: number;
+	laboratorio?: any;
 }
 
 export interface Laboratorio {

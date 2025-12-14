@@ -28,7 +28,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedOrigins(
+                Arrays.asList("http://localhost:4200", "http://localhost", "http://127.0.0.1", "http://localhost:80"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
@@ -40,20 +41,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(withDefaults())
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/users/register", "/api/users/recover").permitAll()
-                .requestMatchers("/api/users/me", "/api/users/profile").authenticated()
-                .requestMatchers("/api/users/**").hasRole("ADMIN")
-                .requestMatchers("/api/laboratorios/**").hasAnyRole("ADMIN", "USER")
-                .anyRequest().authenticated()
-            )
-            .httpBasic(withDefaults());
+                .cors(withDefaults())
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/users/register", "/api/users/recover").permitAll()
+                        .requestMatchers("/api/users/me", "/api/users/profile").authenticated()
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/laboratorios/**").hasAnyRole("ADMIN", "USER")
+                        .anyRequest().authenticated())
+                .httpBasic(withDefaults());
         return http.build();
     }
-
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {

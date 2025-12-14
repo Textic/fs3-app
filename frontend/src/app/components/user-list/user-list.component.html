@@ -20,7 +20,7 @@
 				<td>{{ user.email }}</td>
 				<td>{{ user.rol }}</td>
 				<td>
-					<select class="form-select" [ngModel]="user.laboratorio" (change)="onLabChange(user, $event)">
+					<select class="form-select" [ngModel]="user.laboratorioId" (change)="onLabChange(user, $event)">
 						<option [ngValue]="null">Sin Laboratorio</option>
 						<option *ngFor="let lab of laboratorios" [value]="lab.id">
 							{{ lab.nombre }}
