@@ -1,0 +1,207 @@
+package com.textic.user_service.controller;
+
+import com.textic.user_service.dto.UserDTO;
+import com.textic.user_service.model.User;
+import com.textic.user_service.repository.LaboratorioRepository;
+import com.textic.user_service.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
+	@Autowired
+	private UserRepository userRepository;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private LaboratorioRepository laboratorioRepository;
+
+	private boolean isValidPassword(String password) {
+		String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$";
+		return password != null && password.matches(regex);
+	}
+
+	private UserDTO convertToDTO(User user) {
+		return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getRol(),
+				user.getLaboratorio() != null ? user.getLaboratorio().getId() : null);
+	}
+
+	@GetMapping
+	public List<UserDTO> getAllUsers() {
+		logger.info("Solicitud para obtener todos los usuarios");
+		return userRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+	}
+
+	@GetMapping("/me")
+	public ResponseEntity<UserDTO> getCurrentUser(java.security.Principal principal) {
+		logger.info("Solicitud para obtener usuario actual: {}", principal.getName());
+		return userRepository.findByUsername(principal.getName())
+				.map(user -> ResponseEntity.ok(convertToDTO(user)))
+				.orElse(ResponseEntity.notFound().build());
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+		logger.info("Solicitud para obtener usuario por ID: {}", id);
+		return userRepository.findById(id)
+				.map(user -> ResponseEntity.ok(convertToDTO(user)))
+				.orElse(ResponseEntity.notFound().build());
+	}
+
+	@PostMapping
+	public ResponseEntity<?> createUser(@RequestBody User user) {
+		logger.info("Solicitud para crear usuario: {}", user.getUsername());
+		String role = user.getRol();
+		if (!"admin".equalsIgnoreCase(role) && !"user".equalsIgnoreCase(role)) {
+			return new ResponseEntity<>("Rol invalido. Los roles permitidos son 'admin' y 'user'.",
+					HttpStatus.BAD_REQUEST);
+		}
+		if (user.getPassword() == null || !isValidPassword(user.getPassword())) {
+			return new ResponseEntity<>(
+					"La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+					HttpStatus.BAD_REQUEST);
+		}
+		user.setPassword(passwordEncoder.encode(user.getPassword()));
+		User savedUser = userRepository.save(user);
+		return new ResponseEntity<>(convertToDTO(savedUser), HttpStatus.CREATED);
+	}
+
+	@PutMapping("/{id}")
+	public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+		logger.info("Solicitud para actualizar usuario: {}", id);
+		String role = userDetails.getRol();
+		if (role != null && !"admin".equalsIgnoreCase(role) && !"user".equalsIgnoreCase(role)) {
+			return new ResponseEntity<>("Rol invalido. Los roles permitidos son 'admin' y 'user'.",
+					HttpStatus.BAD_REQUEST);
+		}
+
+		return userRepository.findById(id).<ResponseEntity<?>>map(user -> {
+			if (userDetails.getUsername() != null && !userDetails.getUsername().isEmpty()) {
+				user.setUsername(userDetails.getUsername());
+			}
+			if (userDetails.getEmail() != null && !userDetails.getEmail().isEmpty()) {
+				user.setEmail(userDetails.getEmail());
+			}
+			if (role != null) {
+				user.setRol(userDetails.getRol());
+			}
+			if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+				if (!isValidPassword(userDetails.getPassword())) {
+					return new ResponseEntity<>(
+							"La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+							HttpStatus.BAD_REQUEST);
+				}
+				user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+			}
+			User updatedUser = userRepository.save(user);
+			return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+		}).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+		logger.info("Solicitud para eliminar usuario: {}", id);
+		return userRepository.findById(id).<ResponseEntity<?>>map(user -> {
+			userRepository.delete(user);
+			logger.info("Usuario eliminado con ID: {}", id);
+			return new ResponseEntity<>("Usuario eliminado exitosamente.", HttpStatus.OK);
+		}).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+	}
+
+	@PutMapping("/assign/{userId}/lab/{labId}")
+	public ResponseEntity<?> assignLaboratorioToUser(@PathVariable Long userId, @PathVariable Long labId) {
+		logger.info("Solicitud para asignar laboratorio {} al usuario {}", labId, userId);
+
+		return userRepository.findById(userId)
+				.<ResponseEntity<?>>map(user -> laboratorioRepository.findById(labId).<ResponseEntity<?>>map(lab -> {
+					user.setLaboratorio(lab);
+					User updatedUser = userRepository.save(user);
+					logger.info("Laboratorio {} asignado exitosamente al usuario {}", labId, userId);
+					return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+				}).orElse(new ResponseEntity<>("Laboratorio no encontrado.", HttpStatus.NOT_FOUND)))
+				.orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+	}
+
+	@PutMapping("/assign/{userId}/lab/remove")
+	public ResponseEntity<?> unassignLaboratorioFromUser(@PathVariable Long userId) {
+		logger.info("Solicitud para desasignar laboratorio del usuario {}", userId);
+
+		return userRepository.findById(userId).<ResponseEntity<?>>map(user -> {
+			user.setLaboratorio(null);
+			User updatedUser = userRepository.save(user);
+			logger.info("Laboratorio desasignado exitosamente del usuario {}", userId);
+			return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+		}).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+	}
+
+	@PostMapping("/register")
+	public ResponseEntity<?> registerUser(@RequestBody User user) {
+		logger.info("Solicitud para registrar usuario: {}", user.getUsername());
+		if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+			return new ResponseEntity<>("El nombre de usuario ya existe.", HttpStatus.BAD_REQUEST);
+		}
+		user.setRol("user"); // Default role for registration
+		if (user.getPassword() == null || !isValidPassword(user.getPassword())) {
+			return new ResponseEntity<>(
+					"La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+					HttpStatus.BAD_REQUEST);
+		}
+		user.setPassword(passwordEncoder.encode(user.getPassword()));
+		User savedUser = userRepository.save(user);
+		return new ResponseEntity<>(convertToDTO(savedUser), HttpStatus.CREATED);
+	}
+
+	@PostMapping("/recover")
+	public ResponseEntity<?> recoverPassword(@RequestBody User userDetails) {
+		logger.info("Solicitud de recuperación de contraseña para: {}", userDetails.getEmail());
+
+		return userRepository.findByUsername(userDetails.getUsername()).<ResponseEntity<?>>map(user -> {
+			if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+				if (!isValidPassword(userDetails.getPassword())) {
+					return new ResponseEntity<>(
+							"La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+							HttpStatus.BAD_REQUEST);
+				}
+				user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+				userRepository.save(user);
+				return new ResponseEntity<>("Contraseña actualizada exitosamente.", HttpStatus.OK);
+			} else {
+				return new ResponseEntity<>("La nueva contraseña es requerida.", HttpStatus.BAD_REQUEST);
+			}
+		}).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+	}
+
+	@PutMapping("/profile")
+	public ResponseEntity<?> updateProfile(@RequestBody User userDetails, java.security.Principal principal) {
+		logger.info("Solicitud para actualizar perfil del usuario: {}", principal.getName());
+		return userRepository.findByUsername(principal.getName()).<ResponseEntity<?>>map(user -> {
+			if (userDetails.getEmail() != null && !userDetails.getEmail().isEmpty()) {
+				user.setEmail(userDetails.getEmail());
+			}
+			if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+				if (!isValidPassword(userDetails.getPassword())) {
+					return new ResponseEntity<>(
+							"La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial.",
+							HttpStatus.BAD_REQUEST);
+				}
+				user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+			}
+			User updatedUser = userRepository.save(user);
+			return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+		}).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+	}
+}

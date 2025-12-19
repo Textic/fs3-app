@@ -8,6 +8,8 @@ import { RouterModule } from '@angular/router';
 
 import { ConfirmModalComponent } from '../modal/confirm-modal.component';
 
+import { AuthService } from '../../services/auth';
+
 @Component({
 	selector: 'app-resultado-list',
 	standalone: true,
@@ -23,7 +25,11 @@ export class ResultadoListComponent implements OnInit {
 	showModal = false;
 	resultToDelete: number | null = null;
 
-	constructor(private resultadoService: ResultadoService, private cd: ChangeDetectorRef) { }
+	constructor(
+		private resultadoService: ResultadoService,
+		private cd: ChangeDetectorRef,
+		private authService: AuthService
+	) { }
 
 	ngOnInit(): void {
 		this.loadResultados();
@@ -53,6 +59,11 @@ export class ResultadoListComponent implements OnInit {
 		});
 	}
 
+	get isAdmin(): boolean {
+		const user = this.authService.currentUserValue;
+		return user?.rol === 'admin';
+	}
+
 	deleteResultado(id: number | undefined) {
 		if (!id) return;
 		this.resultToDelete = id;
@@ -77,5 +88,8 @@ export class ResultadoListComponent implements OnInit {
 	closeModal() {
 		this.showModal = false;
 		this.resultToDelete = null;
+		this.cd.detectChanges();
 	}
+
+
 }

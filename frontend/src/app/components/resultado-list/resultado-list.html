@@ -1,7 +1,7 @@
 <div class="container mt-4">
 	<div class="d-flex justify-content-between align-items-center mb-4">
 		<h2>Resultados de Análisis</h2>
-		<a routerLink="/resultados/new" class="btn btn-success">
+		<a *ngIf="isAdmin" routerLink="/resultados/new" class="btn btn-success">
 			<i class="bi bi-plus-lg"></i> Nuevo Resultado
 		</a>
 	</div>
@@ -23,7 +23,7 @@
 					<th>Laboratorio</th>
 					<th>Análisis</th>
 					<th>Fecha</th>
-					<th>Acciones</th>
+					<th *ngIf="isAdmin">Acciones</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -33,7 +33,7 @@
 					<td>{{ res.laboratorio?.nombre }}</td>
 					<td>{{ res.analisis }}</td>
 					<td>{{ res.fecha | date }}</td>
-					<td>
+					<td *ngIf="isAdmin">
 						<button (click)="deleteResultado(res.id)" class="btn btn-danger btn-sm">Eliminar</button>
 					</td>
 				</tr>

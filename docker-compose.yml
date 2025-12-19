@@ -12,11 +12,37 @@ services:
       - ./oracle-data:/opt/oracle/oradata
       - ./01_create_common_user.sql:/container-entrypoint-initdb.d/01_create_common_user.sql
 
-  backend:
-    build: ./backend
-    container_name: fs3-backend
+  lab-service:
+    build: ./backend/lab-service
+    container_name: lab-service
     ports:
-      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/FREE
+      - SPRING_DATASOURCE_USERNAME=dev
+      - SPRING_DATASOURCE_PASSWORD=devpass12345
+    depends_on:
+      - oracle-db
+    restart: on-failure
+
+  result-service:
+    build: ./backend/result-service
+    container_name: result-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/FREE
+      - SPRING_DATASOURCE_USERNAME=dev
+      - SPRING_DATASOURCE_PASSWORD=devpass12345
+    depends_on:
+      - oracle-db
+    restart: on-failure
+
+  user-service:
+    build: ./backend/user-service
+    container_name: user-service
+    ports:
+      - "8083:8083"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/FREE
       - SPRING_DATASOURCE_USERNAME=dev
@@ -31,7 +57,9 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      - lab-service
+      - result-service
+      - user-service
     restart: on-failure
 
 # SySTEM Credentials:
