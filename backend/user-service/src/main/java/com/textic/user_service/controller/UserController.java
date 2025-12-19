@@ -113,9 +113,12 @@ public class UserController {
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+	public ResponseEntity<?> deleteUser(@PathVariable Long id, java.security.Principal principal) {
 		logger.info("Solicitud para eliminar usuario: {}", id);
 		return userRepository.findById(id).<ResponseEntity<?>>map(user -> {
+			if (principal != null && user.getUsername().equals(principal.getName())) {
+				return new ResponseEntity<>("No puedes eliminar tu propio usuario.", HttpStatus.BAD_REQUEST);
+			}
 			userRepository.delete(user);
 			logger.info("Usuario eliminado con ID: {}", id);
 			return new ResponseEntity<>("Usuario eliminado exitosamente.", HttpStatus.OK);

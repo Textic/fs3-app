@@ -34,7 +34,8 @@
 					</select>
 				</td>
 				<td>
-					<button class="btn btn-danger btn-sm" (click)="deleteUser(user.id!)">Eliminar</button>
+					<button class="btn btn-danger btn-sm" (click)="deleteUser(user.id!)"
+						[disabled]="user.id === currentUser?.id">Eliminar</button>
 				</td>
 			</tr>
 		</tbody>

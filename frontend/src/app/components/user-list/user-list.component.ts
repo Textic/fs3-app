@@ -70,7 +70,8 @@ export class UserListComponent implements OnInit {
 				this.closeModal();
 			},
 			error: (err) => {
-				this.errorMessage = 'Error al eliminar usuario';
+				console.error('Error deleting user:', err);
+				this.errorMessage = 'Error al eliminar usuario: ' + (typeof err.error === 'string' ? err.error : (err.error?.message || err.statusText || err.message));
 				this.closeModal();
 			}
 		});
