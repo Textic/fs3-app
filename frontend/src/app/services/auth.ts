@@ -62,12 +62,20 @@ export class AuthService {
     return this.http.get<User[]>(this.apiUrl, { headers: this.getAuthHeaders() });
   }
 
-  deleteUser(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders() });
+  deleteUser(id: number): Observable<string> {
+    return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getAuthHeaders(), responseType: 'text' });
   }
 
   assignLab(userId: number, labId: number): Observable<User> {
     return this.http.put<User>(`${this.apiUrl}/assign/${userId}/lab/${labId}`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  removeLab(userId: number): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/assign/${userId}/lab/remove`, {}, { headers: this.getAuthHeaders() });
+  }
+
+  updateUser(id: number, user: Partial<User>): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/${id}`, user, { headers: this.getAuthHeaders() });
   }
 
   logout() {

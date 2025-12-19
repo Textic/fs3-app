@@ -18,10 +18,16 @@
 				<td>{{ user.id }}</td>
 				<td>{{ user.username }}</td>
 				<td>{{ user.email }}</td>
-				<td>{{ user.rol }}</td>
+				<td>
+					<select class="form-select" [ngModel]="user.rol" (change)="onRoleChange(user, $event)"
+						[disabled]="user.id === currentUser?.id">
+						<option value="admin">Admin</option>
+						<option value="user">User</option>
+					</select>
+				</td>
 				<td>
 					<select class="form-select" [ngModel]="user.laboratorioId" (change)="onLabChange(user, $event)">
-						<option [ngValue]="null">Sin Laboratorio</option>
+						<option value="-1">Sin Laboratorio</option>
 						<option *ngFor="let lab of laboratorios" [value]="lab.id">
 							{{ lab.nombre }}
 						</option>
@@ -33,4 +39,9 @@
 			</tr>
 		</tbody>
 	</table>
+
+	<app-confirm-modal *ngIf="showModal" title="Eliminar Usuario"
+		message="¿Estás seguro de que deseas eliminar este usuario?" (confirm)="confirmDelete()"
+		(cancel)="closeModal()">
+	</app-confirm-modal>
 </div>

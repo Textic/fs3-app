@@ -37,4 +37,9 @@
 	<div *ngIf="!loading && laboratorios.length === 0" class="alert alert-info text-center">
 		No hay laboratorios registrados.
 	</div>
+
+	<app-confirm-modal *ngIf="showModal" title="Eliminar Laboratorio"
+		message="¿Estás seguro de que deseas eliminar este laboratorio?" (confirm)="confirmDelete()"
+		(cancel)="closeModal()">
+	</app-confirm-modal>
 </div>

@@ -1,52 +1,52 @@
 <div class="container mt-4">
 	<div class="d-flex justify-content-between align-items-center mb-4">
-		<div class="container mt-4">
-			<div class="d-flex justify-content-between align-items-center mb-4">
-				<h2>Resultados de Análisis</h2>
-				<a routerLink="/resultados/new" class="btn btn-success">
-					<i class="bi bi-plus-lg"></i> Nuevo Resultado
-				</a>
-			</div>
+		<h2>Resultados de Análisis</h2>
+		<a routerLink="/resultados/new" class="btn btn-success">
+			<i class="bi bi-plus-lg"></i> Nuevo Resultado
+		</a>
+	</div>
 
-			<div *ngIf="loading" class="text-center my-5">
-				<div class="spinner-border text-primary" role="status">
-					<span class="visually-hidden">Cargando...</span>
-				</div>
-			</div>
-
-			<div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-
-			<ng-container *ngIf="resultados$ | async as resultados">
-				<div class="table-responsive" *ngIf="!loading && !error && resultados.length > 0">
-					<table class="table table-striped table-hover">
-						<thead class="table-dark">
-							<tr>
-								<th>ID</th>
-								<th>Paciente</th>
-								<th>Laboratorio</th>
-								<th>Análisis</th>
-								<th>Fecha</th>
-								<th>Acciones</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr *ngFor="let res of resultados">
-								<td>{{ res.id }}</td>
-								<td>{{ res.paciente?.username }}</td>
-								<td>{{ res.laboratorio?.nombre }}</td>
-								<td>{{ res.analisis }}</td>
-								<td>{{ res.fecha | date }}</td>
-								<td>
-									<button (click)="deleteResultado(res.id)"
-										class="btn btn-danger btn-sm">Eliminar</button>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-
-				<div *ngIf="!loading && !error && resultados.length === 0" class="alert alert-info text-center">
-					No hay resultados registrados.
-				</div>
-			</ng-container>
+	<div *ngIf="loading" class="text-center my-5">
+		<div class="spinner-border text-primary" role="status">
+			<span class="visually-hidden">Cargando...</span>
 		</div>
+	</div>
+
+	<div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+	<div class="table-responsive" *ngIf="!loading && !error && resultados.length > 0">
+		<table class="table table-striped table-hover">
+			<thead class="table-dark">
+				<tr>
+					<th>ID</th>
+					<th>Paciente</th>
+					<th>Laboratorio</th>
+					<th>Análisis</th>
+					<th>Fecha</th>
+					<th>Acciones</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr *ngFor="let res of resultados">
+					<td>{{ res.id }}</td>
+					<td>{{ res.paciente?.username }}</td>
+					<td>{{ res.laboratorio?.nombre }}</td>
+					<td>{{ res.analisis }}</td>
+					<td>{{ res.fecha | date }}</td>
+					<td>
+						<button (click)="deleteResultado(res.id)" class="btn btn-danger btn-sm">Eliminar</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div *ngIf="!loading && !error && resultados.length === 0" class="alert alert-info text-center">
+		No hay resultados registrados.
+	</div>
+
+	<app-confirm-modal *ngIf="showModal" title="Eliminar Resultado"
+		message="¿Estás seguro de que deseas eliminar este resultado?" (confirm)="confirmDelete()"
+		(cancel)="closeModal()">
+	</app-confirm-modal>
+</div>

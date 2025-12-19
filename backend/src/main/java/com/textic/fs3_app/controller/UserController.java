@@ -132,6 +132,18 @@ public class UserController {
                 .orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
     }
 
+    @PutMapping("/assign/{userId}/lab/remove")
+    public ResponseEntity<?> unassignLaboratorioFromUser(@PathVariable Long userId) {
+        logger.info("Solicitud para desasignar laboratorio del usuario {}", userId);
+
+        return userRepository.findById(userId).<ResponseEntity<?>>map(user -> {
+            user.setLaboratorio(null);
+            User updatedUser = userRepository.save(user);
+            logger.info("Laboratorio desasignado exitosamente del usuario {}", userId);
+            return new ResponseEntity<>(convertToDTO(updatedUser), HttpStatus.OK);
+        }).orElse(new ResponseEntity<>("Usuario no encontrado.", HttpStatus.NOT_FOUND));
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         logger.info("Solicitud para registrar usuario: {}", user.getUsername());

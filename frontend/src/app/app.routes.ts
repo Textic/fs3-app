@@ -6,12 +6,13 @@ import { LaboratorioListComponent } from './components/laboratorio-list/laborato
 import { LaboratorioFormComponent } from './components/laboratorio-form/laboratorio-form';
 import { authGuard } from './guards/auth-guard';
 import { adminGuard } from './guards/admin-guard';
+import { guestGuard } from './guards/guest-guard';
 
 export const routes: Routes = [
 	{ path: '', redirectTo: '/login', pathMatch: 'full' },
-	{ path: 'login', component: LoginComponent },
-	{ path: 'register', component: RegisterComponent },
-	{ path: 'recover', component: RecoverPasswordComponent },
+	{ path: 'login', component: LoginComponent, canActivate: [guestGuard] },
+	{ path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
+	{ path: 'recover', component: RecoverPasswordComponent, canActivate: [guestGuard] },
 	{
 		path: 'profile',
 		loadComponent: () => import('./components/profile/profile').then(m => m.ProfileComponent),
