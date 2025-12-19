@@ -56,30 +56,45 @@ describe('LaboratorioListComponent', () => {
   });
 
   it('should delete laboratorio if confirmed', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
     labServiceSpy.delete.and.returnValue(of(undefined));
 
     component.laboratorios = [{ id: 10, nombre: 'L', direccion: 'D', telefono: 'T' }];
+
+    // Abrir modal
     component.deleteLaboratorio(10);
+    expect(component.showModal).toBeTrue();
+    expect(component.labToDelete).toBe(10);
+
+    // Confirmar eliminación
+    component.confirmDelete();
 
     expect(labServiceSpy.delete).toHaveBeenCalledWith(10);
     expect(component.laboratorios.length).toBe(0);
+    expect(component.showModal).toBeFalse();
   });
 
   it('should NOT delete if cancelled', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
+    // Abrir modal
     component.deleteLaboratorio(10);
+    expect(component.showModal).toBeTrue();
+
+    // Cerrar modal sin confirmar
+    component.closeModal();
+
     expect(labServiceSpy.delete).not.toHaveBeenCalled();
+    expect(component.showModal).toBeFalse();
   });
 
   it('should handle delete error', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
     spyOn(window, 'alert');
     labServiceSpy.delete.and.returnValue(throwError(() => new Error('Err')));
 
+    // Abrir modal y confirmar
     component.deleteLaboratorio(10);
+    component.confirmDelete();
 
     expect(window.alert).toHaveBeenCalledWith('Error al eliminar laboratorio');
+    expect(component.showModal).toBeFalse();
   });
 
   it('should verify user role', () => {

@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test -- --watch=false --browsers=ChromeHeadless",
-    "sonar": "sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.token=squ_cfb92b5b5df724382a8eff4dc6e9a7c7c396fd87"
+    "test2": "ng test --no-watch --code-coverage",
+    "sonar": "sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.token=squ_a0eaf2d45b38d26404aca573b694e406f942bdf6"
   },
   "prettier": {
     "printWidth": 100,

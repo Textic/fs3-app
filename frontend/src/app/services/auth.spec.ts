@@ -74,4 +74,128 @@ describe('AuthService', () => {
     const headers = service.getAuthHeaders();
     expect(headers.get('authorization')).toBeNull();
   });
+
+  it('should return currentUserValue as null initially', () => {
+    expect(service.currentUserValue).toBeNull();
+  });
+
+  it('should logout and clear user data', () => {
+    // Setup: simulate logged in user
+    localStorage.setItem('currentUser', JSON.stringify(mockUser));
+
+    service.logout();
+
+    expect(localStorage.getItem('currentUser')).toBeNull();
+    expect(service.currentUserValue).toBeNull();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('should get all users', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    service.getAllUsers().subscribe(users => {
+      expect(users.length).toBe(1);
+    });
+
+    const req = httpMock.expectOne('/api/users');
+    expect(req.request.method).toBe('GET');
+    req.flush([mockUser]);
+  });
+
+  it('should delete user', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    service.deleteUser(1).subscribe(res => {
+      expect(res).toBe('Deleted');
+    });
+
+    const req = httpMock.expectOne('/api/users/1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush('Deleted');
+  });
+
+  it('should assign lab to user', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    service.assignLab(1, 10).subscribe(user => {
+      expect(user).toBeTruthy();
+    });
+
+    const req = httpMock.expectOne('/api/users/assign/1/lab/10');
+    expect(req.request.method).toBe('PUT');
+    req.flush({ ...mockUser, laboratorioId: 10 });
+  });
+
+  it('should remove lab from user', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    service.removeLab(1).subscribe(user => {
+      expect(user).toBeTruthy();
+    });
+
+    const req = httpMock.expectOne('/api/users/assign/1/lab/remove');
+    expect(req.request.method).toBe('PUT');
+    req.flush({ ...mockUser, laboratorioId: null });
+  });
+
+  it('should update user', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    service.updateUser(1, { rol: 'admin' }).subscribe(user => {
+      expect(user.rol).toBe('admin');
+    });
+
+    const req = httpMock.expectOne('/api/users/1');
+    expect(req.request.method).toBe('PUT');
+    req.flush({ ...mockUser, rol: 'admin' });
+  });
+
+  it('should update profile with new password', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    const updatedUser: User = { ...mockUser, password: 'newPassword123' };
+    service.updateProfile(updatedUser).subscribe(user => {
+      expect(user).toBeTruthy();
+    });
+
+    const req = httpMock.expectOne('/api/users/profile');
+    expect(req.request.method).toBe('PUT');
+    req.flush(updatedUser);
+  });
+
+  it('should update profile keeping old password', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    const updatedUser: User = { ...mockUser, password: '' };
+    service.updateProfile(updatedUser).subscribe(user => {
+      expect(user).toBeTruthy();
+    });
+
+    const req = httpMock.expectOne('/api/users/profile');
+    expect(req.request.method).toBe('PUT');
+    req.flush({ ...mockUser, password: undefined });
+  });
+
+  it('should return auth headers when user is logged in', () => {
+    // First login to set auth headers
+    service.login('testuser', 'pass123').subscribe();
+    httpMock.expectOne('/api/users/me').flush(mockUser);
+
+    const headers = service.getAuthHeaders();
+    expect(headers.get('authorization')).toContain('Basic');
+  });
 });

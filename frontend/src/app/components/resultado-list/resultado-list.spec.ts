@@ -49,9 +49,7 @@ describe('ResultadoListComponent', () => {
 		fixture.detectChanges(); // Actualizamos la vista
 
 		expect(component.loading).toBeFalse(); // Debe terminar de cargar
-		component.resultados$.subscribe(data => {
-			expect(data.length).toBe(1);
-		});
+		expect(component.resultados.length).toBe(1);
 	}));
 
 	it('should handle error when loading results', fakeAsync(() => {
@@ -63,50 +61,53 @@ describe('ResultadoListComponent', () => {
 		tick(1); // Esperamos el error
 		fixture.detectChanges();
 
-		expect(component.error).toBe('Error al cargar resultados');
+		expect(component.error).toContain('Error al cargar resultados');
 		expect(component.loading).toBeFalse();
 	}));
 
 	// --- AQUÍ ESTABA EL ERROR CORREGIDO ---
 	it('should delete result if confirmed', fakeAsync(() => {
-		fixture.detectChanges(); // Inicialización previa (ngOnInit)
-
-		spyOn(window, 'confirm').and.returnValue(true);
-		resultadoServiceSpy.delete.and.returnValue(of(undefined));
-
-		// Configuramos la recarga para que tarde 1ms, así podemos verificar el loading
-		resultadoServiceSpy.getAll.and.returnValue(of([]).pipe(delay(1)));
-
-		component.deleteResultado(1);
-
-		expect(resultadoServiceSpy.delete).toHaveBeenCalledWith(1);
-		expect(component.loading).toBeTrue(); // Verificamos que se puso en true al recargar
-
-		fixture.detectChanges(); // Actualizamos para que el pipe async se suscriba al nuevo observable
-		tick(1); // Esperamos a que termine la recarga
+		// Inicializar datos directamente en el componente
+		component.resultados = [{ id: 1, analisis: 'Test', fecha: new Date() }];
 		fixture.detectChanges();
 
-		expect(component.loading).toBeFalse(); // Ahora sí debe ser false
+		// Devolvemos objeto vacío o null, ya que delete retorna Observable<any>
+		resultadoServiceSpy.delete.and.returnValue(of({}));
+
+		// 1. Open modal
+		component.deleteResultado(1);
+		expect(component.showModal).toBeTrue();
+		expect(component.resultToDelete).toBe(1);
+
+		// 2. Confirm
+		component.confirmDelete();
+
+		expect(resultadoServiceSpy.delete).toHaveBeenCalledWith(1);
+		expect(component.resultados.length).toBe(0); // Ahora debe estar vacío
+		expect(component.showModal).toBeFalse();
 	}));
 
 	it('should NOT delete result if cancelled', () => {
 		fixture.detectChanges();
-		spyOn(window, 'confirm').and.returnValue(false);
 		component.deleteResultado(1);
 		expect(resultadoServiceSpy.delete).not.toHaveBeenCalled();
+
+		component.closeModal();
+		expect(resultadoServiceSpy.delete).not.toHaveBeenCalled();
+		expect(component.showModal).toBeFalse();
 	});
 
 	it('should handle delete error', fakeAsync(() => {
 		fixture.detectChanges();
-		spyOn(window, 'confirm').and.returnValue(true);
 		spyOn(window, 'alert');
 		resultadoServiceSpy.delete.and.returnValue(throwError(() => new Error('Delete Error')));
 
 		component.deleteResultado(1);
+		component.confirmDelete();
 
 		expect(resultadoServiceSpy.delete).toHaveBeenCalledWith(1);
-		// Como el error es síncrono en este spy, se procesa inmediato
 		expect(window.alert).toHaveBeenCalledWith('Error al eliminar resultado');
+		expect(component.showModal).toBeFalse();
 	}));
 
 	it('should do nothing if id is undefined', () => {

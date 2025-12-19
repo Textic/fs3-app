@@ -53,18 +53,21 @@ describe('UserListComponent', () => {
 	});
 
 	it('should delete user if confirmed', () => {
-		spyOn(window, 'confirm').and.returnValue(true);
-
-		// CORRECCIÓN 2: Devolver 'undefined' para simular void correctamente
-		authServiceSpy.deleteUser.and.returnValue(of(undefined));
+		// Mock deleteUser response compliant with Observable<string>
+		authServiceSpy.deleteUser.and.returnValue(of('Deleted'));
 
 		// Usuario temporal para la prueba
 		component.users = [{ id: 99, username: 'Borrar', email: 'a@a.com', password: '' }];
 
 		component.deleteUser(99);
+		expect(component.showModal).toBeTrue();
+		expect(component.userToDelete).toBe(99);
+
+		component.confirmDelete();
 
 		expect(authServiceSpy.deleteUser).toHaveBeenCalledWith(99);
 		expect(component.users.length).toBe(0);
+		expect(component.showModal).toBeFalse();
 	});
 
 	it('should assign lab to user', () => {
@@ -106,18 +109,24 @@ describe('UserListComponent', () => {
 	});
 
 	it('should NOT delete user if cancelled', () => {
-		spyOn(window, 'confirm').and.returnValue(false);
+		// Opening modal does not delete
 		component.deleteUser(99);
 		expect(authServiceSpy.deleteUser).not.toHaveBeenCalled();
+
+		// Closing modal does not delete
+		component.closeModal();
+		expect(authServiceSpy.deleteUser).not.toHaveBeenCalled();
+		expect(component.showModal).toBeFalse();
 	});
 
 	it('should handle error when deleting user', () => {
-		spyOn(window, 'confirm').and.returnValue(true);
 		authServiceSpy.deleteUser.and.returnValue(throwError(() => new Error('Delete Error')));
 
 		component.deleteUser(99);
+		component.confirmDelete();
 
-		expect(component.errorMessage).toBe('Error al eliminar usuario');
+		expect(component.errorMessage).toContain('Error al eliminar usuario');
+		expect(component.showModal).toBeFalse();
 	});
 
 	it('should trigger assignLab on lab change', () => {
@@ -128,5 +137,121 @@ describe('UserListComponent', () => {
 		component.onLabChange(mockUser, mockEvent);
 
 		expect(component.assignLab).toHaveBeenCalledWith(mockUser, 20);
+	});
+
+	it('should remove lab when labId is -1', () => {
+		spyOn(window, 'alert');
+		authServiceSpy.removeLab = jasmine.createSpy().and.returnValue(of({ id: 5, username: 'u5' }));
+
+		const mockUser: User = { id: 5, username: 'u5', email: 'u@u.com', password: '', laboratorioId: 10 };
+
+		component.assignLab(mockUser, -1);
+
+		expect(authServiceSpy.removeLab).toHaveBeenCalledWith(5);
+		expect(mockUser.laboratorioId).toBeUndefined();
+		expect(window.alert).toHaveBeenCalledWith('Laboratorio desasignado correctamente');
+	});
+
+	it('should handle error removing lab', () => {
+		authServiceSpy.removeLab = jasmine.createSpy().and.returnValue(throwError(() => new Error('Error')));
+		authServiceSpy.getAllUsers.and.returnValue(of([]));
+
+		const mockUser: User = { id: 5, username: 'u5', email: 'u@u.com', password: '', laboratorioId: 10 };
+
+		component.assignLab(mockUser, -1);
+
+		expect(component.errorMessage).toBe('Error al desasignar laboratorio');
+	});
+
+	it('should handle onLabChange with null/empty value', () => {
+		spyOn(component, 'assignLab');
+		const mockUser: User = { id: 1, username: 'test', email: 't@t.com', password: '' };
+		const mockEvent = { target: { value: 'null' } } as unknown as Event;
+
+		component.onLabChange(mockUser, mockEvent);
+
+		expect(component.assignLab).toHaveBeenCalledWith(mockUser, -1);
+	});
+
+	it('should not assign lab if user id is undefined', () => {
+		const mockUser: User = { username: 'test', email: 't@t.com', password: '' };
+
+		component.assignLab(mockUser, 20);
+
+		expect(authServiceSpy.assignLab).not.toHaveBeenCalled();
+	});
+
+	it('should change user role after confirmation', () => {
+		spyOn(window, 'confirm').and.returnValue(true);
+		spyOn(window, 'alert');
+		authServiceSpy.updateUser = jasmine.createSpy().and.returnValue(of({ id: 5, username: 'u5', rol: 'admin' }));
+
+		const mockUser: User = { id: 5, username: 'u5', email: 'u@u.com', password: '', rol: 'user' };
+		component.currentUser = { id: 1, username: 'admin', email: 'a@a.com', password: '' };
+		const mockEvent = { target: { value: 'admin' } } as unknown as Event;
+
+		component.onRoleChange(mockUser, mockEvent);
+
+		expect(window.confirm).toHaveBeenCalled();
+		expect(authServiceSpy.updateUser).toHaveBeenCalledWith(5, { rol: 'admin' });
+		expect(window.alert).toHaveBeenCalledWith('Rol actualizado correctamente');
+	});
+
+	it('should not change own role', () => {
+		spyOn(window, 'alert');
+		component.currentUser = { id: 5, username: 'u5', email: 'u@u.com', password: '' };
+
+		const mockUser: User = { id: 5, username: 'u5', email: 'u@u.com', password: '' };
+		const mockEvent = { target: { value: 'admin' } } as unknown as Event;
+
+		component.onRoleChange(mockUser, mockEvent);
+
+		expect(window.alert).toHaveBeenCalledWith('No puedes cambiar tu propio rol.');
+	});
+
+	it('should not change role if cancelled', () => {
+		spyOn(window, 'confirm').and.returnValue(false);
+		authServiceSpy.getAllUsers.and.returnValue(of([]));
+		authServiceSpy.updateUser = jasmine.createSpy();
+
+		component.currentUser = { id: 1, username: 'admin', email: 'a@a.com', password: '' };
+		const mockUser: User = { id: 5, username: 'u5', email: 'u@u.com', password: '' };
+		const mockEvent = { target: { value: 'admin' } } as unknown as Event;
+
+		component.onRoleChange(mockUser, mockEvent);
+
+		expect(authServiceSpy.updateUser).not.toHaveBeenCalled();
+		expect(authServiceSpy.getAllUsers).toHaveBeenCalled();
+	});
+
+	it('should handle error when changing role', () => {
+		spyOn(window, 'confirm').and.returnValue(true);
+		spyOn(console, 'error');
+		authServiceSpy.updateUser = jasmine.createSpy().and.returnValue(throwError(() => new Error('Error')));
+		authServiceSpy.getAllUsers.and.returnValue(of([]));
+
+		component.currentUser = { id: 1, username: 'admin', email: 'a@a.com', password: '' };
+		const mockUser: User = { id: 5, username: 'u5', email: 'u@u.com', password: '' };
+		const mockEvent = { target: { value: 'admin' } } as unknown as Event;
+
+		component.onRoleChange(mockUser, mockEvent);
+
+		expect(component.errorMessage).toBe('Error al actualizar el rol');
+	});
+
+	it('should not call confirmDelete if userToDelete is null', () => {
+		component.userToDelete = null;
+		component.confirmDelete();
+		expect(authServiceSpy.deleteUser).not.toHaveBeenCalled();
+	});
+
+	it('should not change role if user id is undefined', () => {
+		authServiceSpy.updateUser = jasmine.createSpy();
+		const mockUser: User = { username: 'u5', email: 'u@u.com', password: '' };
+		const mockEvent = { target: { value: 'admin' } } as unknown as Event;
+
+		component.onRoleChange(mockUser, mockEvent);
+
+		expect(authServiceSpy.updateUser).not.toHaveBeenCalled();
 	});
 });

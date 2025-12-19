@@ -4,7 +4,7 @@ import { ResultadoService } from '../../services/resultado';
 import { AuthService } from '../../services/auth';
 import { LaboratorioService } from '../../services/laboratorio';
 import { Router, ActivatedRoute, UrlTree, NavigationEnd } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 
 describe('ResultadoFormComponent', () => {
@@ -76,5 +76,51 @@ describe('ResultadoFormComponent', () => {
 
 		expect(resultadoServiceSpy.update).toHaveBeenCalledWith(123, component.resultado);
 		expect(routerSpy.navigate).toHaveBeenCalledWith(['/resultados']);
+	});
+
+	it('should load resultado in edit mode', () => {
+		const mockResult = { id: 5, analisis: 'Test', fecha: new Date() };
+		resultadoServiceSpy.getById.and.returnValue(of(mockResult));
+
+		component.loadResultado(5);
+
+		expect(resultadoServiceSpy.getById).toHaveBeenCalledWith(5);
+		expect(component.resultado).toEqual(mockResult);
+	});
+
+	it('should handle error when loading resultado', () => {
+		resultadoServiceSpy.getById.and.returnValue(throwError(() => new Error('Load Error')));
+
+		component.loadResultado(5);
+
+		expect(component.error).toBe('Error al cargar resultado');
+	});
+
+	it('should handle error when creating resultado', () => {
+		resultadoServiceSpy.create.and.returnValue(throwError(() => new Error('Create Error')));
+		component.isEditMode = false;
+
+		component.onSubmit();
+
+		expect(component.error).toBe('Error al crear resultado');
+		expect(component.loading).toBeFalse();
+	});
+
+	it('should handle error when updating resultado', () => {
+		component.isEditMode = true;
+		component.resultado = { id: 123, analisis: 'Editado', fecha: new Date() };
+		resultadoServiceSpy.update.and.returnValue(throwError(() => new Error('Update Error')));
+
+		component.onSubmit();
+
+		expect(component.error).toBe('Error al actualizar resultado');
+		expect(component.loading).toBeFalse();
+	});
+
+	it('should compare objects correctly', () => {
+		expect(component.compareObjects({ id: 1 }, { id: 1 })).toBeTrue();
+		expect(component.compareObjects({ id: 1 }, { id: 2 })).toBeFalse();
+		expect(component.compareObjects(null, null)).toBeTrue();
+		expect(component.compareObjects(null, { id: 1 })).toBeFalse();
 	});
 });

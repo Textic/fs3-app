@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LaboratorioFormComponent } from './laboratorio-form';
 import { LaboratorioService } from '../../services/laboratorio';
 import { Router, ActivatedRoute, UrlTree, NavigationEnd } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 describe('LaboratorioFormComponent', () => {
   let component: LaboratorioFormComponent;
@@ -62,5 +62,45 @@ describe('LaboratorioFormComponent', () => {
 
     expect(labServiceSpy.update).toHaveBeenCalledWith(5, component.laboratorio);
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/laboratorios']);
+  });
+
+  it('should load laboratorio in edit mode', () => {
+    const mockLab = { id: 10, nombre: 'Lab10', direccion: 'Dir10', telefono: 'Tel10' };
+    labServiceSpy.getById.and.returnValue(of(mockLab));
+
+    component.loadLaboratorio(10);
+
+    expect(labServiceSpy.getById).toHaveBeenCalledWith(10);
+    expect(component.laboratorio).toEqual(mockLab);
+    expect(component.loading).toBeFalse();
+  });
+
+  it('should handle error when loading laboratorio', () => {
+    labServiceSpy.getById.and.returnValue(throwError(() => new Error('Load Error')));
+
+    component.loadLaboratorio(10);
+
+    expect(component.error).toBe('Error al cargar el laboratorio');
+    expect(component.loading).toBeFalse();
+  });
+
+  it('should handle error when creating laboratorio', () => {
+    labServiceSpy.create.and.returnValue(throwError(() => new Error('Create Error')));
+
+    component.onSubmit();
+
+    expect(component.error).toBe('Error al crear el laboratorio');
+    expect(component.loading).toBeFalse();
+  });
+
+  it('should handle error when updating laboratorio', () => {
+    component.isEditMode = true;
+    component.laboratorio = { id: 5, nombre: 'Edit', direccion: 'D', telefono: 'T' };
+    labServiceSpy.update.and.returnValue(throwError(() => new Error('Update Error')));
+
+    component.onSubmit();
+
+    expect(component.error).toBe('Error al actualizar el laboratorio');
+    expect(component.loading).toBeFalse();
   });
 });
